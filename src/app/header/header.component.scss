@@ -1,0 +1,30 @@
+.header {
+    &__container {
+        background-color: black;
+        display: flex;
+        flex-direction: row;
+    }
+
+    &__item {
+        color: white;
+        cursor: pointer;
+        &:hover {
+            color: pink;
+        }
+        .cart-title{
+            position: relative;            
+            .cart-badge{
+                background-color: red;
+                border-radius: 100%;
+                position: absolute;
+                width: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                top: -12px;
+                right: -20px;
+            }
+        }
+    }
+}

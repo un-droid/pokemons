@@ -1,0 +1,18 @@
+<div class="cart-pokemons-container" *ngIf="pokemonsInCart.length > 0 ; else noPokemons">
+    <p class="cart-pokemon-list__title">You have currently ({{pokemonsInCart.length}}) Pokemons in your cart:</p>
+    <mat-list role="list" class="pokemon-list__container" >
+        <mat-list-item *ngFor="let pokemon of pokemonsInCart; trackBy: trackByFn"
+                        role="listitem" class="pokemon__item"
+                        [@simpleFadeAnimation]="'in'">
+            <i class="fa fa-minus-circle" (click)="removePokemonFromCart(pokemon)" title="Remove {{pokemon.name}} from the cart"></i>
+            <div class="pokemon-details">
+                <img [src]="pokemon.image">
+                <span>{{pokemon.name | titlecase}}</span>
+            </div>
+        </mat-list-item>
+    </mat-list>
+    <button mat-raised-button class="clear-button" (click)="clearCart()" title="Remove all pokemons from the cart">Clear</button>
+</div>
+<ng-template #noPokemons>
+    <p class="cart-pokemon-list__title">No Pokemons in your cart. Please add Pokemons to continue</p>
+</ng-template>

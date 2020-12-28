@@ -1,0 +1,10 @@
+<p class="pokemon-list__title">Pokemons list ({{pokemons.length}}):</p>
+<mat-list role="list" class="pokemon-list__container" >
+    <mat-list-item *ngFor="let pokemon of pokemons; trackBy: trackByFn" role="listitem" class="pokemon__item">
+        <i class="fa fa-plus-circle" *ngIf="!pokemon.addedToCart" (click)="addPokemonToCart(pokemon)" title="Add {{pokemon.name}} to the cart"></i>
+        <div class="pokemon-details">
+            <img [src]="pokemon.image">
+            <span>{{pokemon.name | titlecase}}</span>
+        </div>
+    </mat-list-item>
+</mat-list>
