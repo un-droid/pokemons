@@ -6,7 +6,7 @@ import { HomeComponent } from './home/home.component';
 import { HeaderComponent } from './header/header.component';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatList, MatListModule } from '@angular/material/list';
+import { MatListModule } from '@angular/material/list';
 import { CartComponent } from './cart/cart.component';
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from '@angular/material/button';
@@ -20,7 +20,7 @@ import { FormsModule } from '@angular/forms';
     HomeComponent,
     HeaderComponent,
     CartComponent,
-    ConfirmComponent
+    ConfirmComponent,
   ],
   entryComponents:[
     ConfirmComponent
@@ -31,7 +31,6 @@ import { FormsModule } from '@angular/forms';
     HttpClientModule,
     BrowserAnimationsModule,
     MatListModule,
-   // MatDialogModule,
     MatButtonModule,
     FormsModule
   ],

@@ -6,7 +6,6 @@ import { PokemonService } from '../pokemon.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmComponent, ConfirmDialogModel } from "../confirm/confirm.component";
 import { animate, state, style, transition, trigger } from '@angular/animations';
-
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.component.html',
@@ -26,30 +25,39 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 })
 export class CartComponent implements OnInit {
 
-  pokemonsInCart:Pokemon[] = [];
-  private cartPokemonsSub = new Subscription();
-  showPokemon = true;
-  result: string = '';
+  pokemons:Pokemon[] = [];
+  private pokemonsSub = new Subscription();
+  clearCartDialogResult: string = '';
+  
+  pokemonsInCartCount:number = 0;
+  private pokemonsInCartNumSub = new Subscription();
+
   constructor(private pokemonService: PokemonService, 
               private logger: LoggerService,
               private dialog: MatDialog) { }
 
-  toggle(){
-    this.showPokemon = !this.showPokemon;
-  }
   ngOnDestroy(): void {
-    this.cartPokemonsSub.unsubscribe();
+    this.pokemonsSub.unsubscribe();
+    this.pokemonsInCartNumSub.unsubscribe();
   }
 
   ngOnInit(): void {
     this.logger.debug('init CartComponent');
-    this.cartPokemonsSub = this.pokemonService.pokemonsInCartList$.subscribe(result => this.pokemonsInCart = result);
+    this.pokemonsSub = this.pokemonService.PokemonList$.subscribe(result => this.pokemons = result);
+    this.pokemonsInCartNumSub = this.pokemonService.PokemonsInCartAmount$.subscribe(result => this.pokemonsInCartCount = result);
   }
 
+  /**
+   * function which removes a pokemon from the cart by calling the service which sets the addedToCart prop tp false
+   * @param pokemon the pokemon to be removed from the cart
+   */
   removePokemonFromCart(pokemon): void{
     this.pokemonService.removePokemonFromCart(pokemon);
   }
 
+  /**
+   * a custom confirmation dialog to clear the cart
+   */
   clearCart(): void {
     const message = `Are you sure you want to clear the cart?`;
  
@@ -61,14 +69,26 @@ export class CartComponent implements OnInit {
     });
  
     dialogRef.afterClosed().subscribe(dialogResult => {
-      this.result = dialogResult;
+      this.clearCartDialogResult = dialogResult;
       if(dialogResult === true){
         this.pokemonService.clearAllPokemonsFromCart();
       }
     });
   }
 
+  /**
+   * function to help speed things up during ngfor rendering
+   * @param pokemon an object which has a trackable parameter, id in this case
+   */
   public trackByFn(pokemon) {
     return pokemon.id;
+  }
+
+  /**
+   * function that performs filtering by the addedToCart parameter
+   * @param poks is a list of all pokemons
+   */
+  public performFilter(poks:Pokemon[]): Pokemon[] {
+    return poks.filter((pokemon: Pokemon) => pokemon.addedToCart === true );
   }
 }

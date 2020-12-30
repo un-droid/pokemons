@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy, OnInit } from '@angular/core';
 import { LoggerService } from './logger.service';
 import { ApiClientService } from './api-client.service';
-import { Subscription, BehaviorSubject, of } from 'rxjs';
+import { Subscription, BehaviorSubject } from 'rxjs';
 import { Pokemon } from './pokemon-types';
 import { AuthService } from './auth.service';
 
@@ -13,10 +13,12 @@ export class PokemonService implements OnInit, OnDestroy {
   private pokemonList = new BehaviorSubject<Pokemon[]>([]);
   PokemonList$ = this.pokemonList.asObservable();
   private pokemonsSub = new Subscription();
-  //cart pokemons
-  private pokemonsInCartList = new BehaviorSubject<Pokemon[]>([]);
-  pokemonsInCartList$ = this.pokemonsInCartList.asObservable();
-  private pokemonsInCarSub = new Subscription();
+
+  //tracks the nuber of pokemon in cart
+  private pokemonsInCartAmount = new BehaviorSubject<number>(0);
+  PokemonsInCartAmount$ = this.pokemonsInCartAmount.asObservable();
+  private inCartNumSub = new Subscription();
+
   //auth
   private isLoggedSub = new Subscription();
   private logged: boolean = false;
@@ -28,9 +30,9 @@ export class PokemonService implements OnInit, OnDestroy {
   ) {}
 
   ngOnDestroy(): void {
-    this.pokemonsInCarSub.unsubscribe();
     this.pokemonsSub.unsubscribe();
     this.isLoggedSub.unsubscribe();
+    this.inCartNumSub.unsubscribe();
   }
 
   ngOnInit(): void {
@@ -43,7 +45,7 @@ export class PokemonService implements OnInit, OnDestroy {
         }
       });
     } catch {
-      this.logger.debug('error getting pokemons from backend');
+      this.logger.info('error getting pokemons from backend');
     }
     this.isLoggedSub = this.auth.isLoggedIn$.subscribe((result) => {
       if (result === true) {
@@ -53,100 +55,131 @@ export class PokemonService implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * adds a desired pokemon to the cart
+   * @param pokemon the pokemon which will be added to the cart
+   */
   public addPokemonToCart(pokemon: Pokemon): number {
     try {
       if (pokemon) {
-        const currentCartPokemons = this.pokemonsInCartList.value;
-        const updatedValue = [...currentCartPokemons, pokemon];
-        this.pokemonsInCartList.next(updatedValue);
+        const currentPokemons = this.pokemonList.value;
+        const addedPokemonIndex = currentPokemons.findIndex(pok => pok.id === pokemon.id);
+        currentPokemons[addedPokemonIndex].addedToCart = true;
+        this.pokemonList.next(currentPokemons);
         this.logger.info(`${pokemon.name} was added to the cart`);
+
+        //update number of pokemons in cart
+        let numOfPokemonsInCart = this.pokemonsInCartAmount.value;
+        this.pokemonsInCartAmount.next(++numOfPokemonsInCart);
 
         if (this.logged) {
           this.logger.info(`a user is logged in. modifying pokemon cart in local storage`);
-          localStorage.setItem('cartedPokemons', JSON.stringify(updatedValue));
+          //store the ids of pokemons added to cart and storage
+          const pokemonsInCartIds = currentPokemons.reduce((ids, pokemon) =>{
+            if(pokemon.addedToCart === true){
+                ids.push(pokemon.id);
+            }
+            return ids;
+        }, []);
+
+          localStorage.setItem('cartedPokemons', JSON.stringify(pokemonsInCartIds));
         }
 
         return pokemon.id;
       }
     } catch {
-      this.logger.debug(`error adding ${pokemon.name} to the cart`);
+      this.logger.info(`error adding ${pokemon.name} to the cart`);
       return -1;
     }
   }
 
+  /**
+   * removes the recieved pokemon from the cart
+   * @param pokemon pokemon to be removed from cart
+   */
   public removePokemonFromCart(pokemon: Pokemon): void {
     try{
       if (pokemon) {
-        let currentCartPokemons = this.pokemonsInCartList.value;
-        currentCartPokemons = currentCartPokemons.filter(
-          (pok) => pok.name !== pokemon.name
-        );
-  
-        this.pokemonsInCartList.next(currentCartPokemons);
+        const allPokemons = this.pokemonList.value;
+        const addedPokemonIndex = allPokemons.findIndex(pok => pok.id === pokemon.id);
+        allPokemons[addedPokemonIndex].addedToCart = false;
+
+        this.pokemonList.next(allPokemons);
         this.logger.info(`${pokemon.name} was removed from the cart`);
   
+        //update number of pokemons in cart
+        let numOfPokemonsInCart = this.pokemonsInCartAmount.value;
+        this.pokemonsInCartAmount.next(--numOfPokemonsInCart);
+
         if (this.logged) {
           this.logger.info(`a user is logged in. modifying pokemon cart in local storage`);
-          localStorage.setItem('cartedPokemons',JSON.stringify(currentCartPokemons));
-        }
-  
-        //update removed pokemon with the addedToCart property to show the + in the home component
-        const allPokemons = this.pokemonList.value;
-  
-        const addedPokemon = allPokemons.find((pok) => pok.name === pokemon.name);
-        if (addedPokemon) {
-          addedPokemon.addedToCart = false;
-          this.pokemonList.next(allPokemons);
+          //store the ids of pokemons added to cart and storage
+          const pokemonsInCartIds = allPokemons.reduce((ids, pokemon) =>{
+            if(pokemon.addedToCart === true){
+                ids.push(pokemon.id);
+            }
+            return ids;
+        }, []);
+          localStorage.setItem('cartedPokemons',JSON.stringify(pokemonsInCartIds));
         }
       }
     }catch{
-      this.logger.debug(`error removing pokemon from cart`);
+      this.logger.info(`error removing pokemon from cart`);
     }
   }
 
-  clearAllPokemonsFromCart(): void {
+  /**
+   * removes all pokemons from the cart
+   */
+  public clearAllPokemonsFromCart(): void {
     try{
       this.logger.info(`clearing pokemon cart`);
-    //clear cart list
-    this.pokemonsInCartList.next([]);
     //reset addedToCart property of pokemons in main list
     const allPokemons = this.pokemonList.value;
     //i think resetting all pokemons is faster than filtering out the names of pokemons which were in the cart and iterating over the whole list again to affect only them
-    allPokemons.forEach((pok) => (pok.addedToCart = false));
+    allPokemons.forEach(pok => pok.addedToCart = false);
     this.pokemonList.next(allPokemons);
+    //reset pokemons in cart counter
+    this.pokemonsInCartAmount.next(0);
     if (this.logged) {
       this.logger.info(`a user is logged in. removing all pokemons from local storage`);
       localStorage.removeItem('cartedPokemons');
     }
     }catch{
-      this.logger.debug(`error clearing pokemons from cart`);
+      this.logger.info(`error clearing pokemons from cart`);
     }
   }
 
-  loadPokemonsToCartFromLocalStorage(logged): void {
+  /**
+   * loads saved pokemons cart from storage (if exists) when user logs in
+   * @param logged boolean to indicate the status of the user
+   */
+  private loadPokemonsToCartFromLocalStorage(logged): void {
     try{
       if (logged) {
         this.logger.info(`a user just logged in. checking localStorage for saved pokemon cart`);
-        const cartedPokemonsStr = localStorage.getItem('cartedPokemons');
-        if (cartedPokemonsStr) {
-          const parsedCartedPokemons = JSON.parse(cartedPokemonsStr);
-          this.logger.info(`existing pokemons cart found`);
-          this.pokemonsInCartList.next(parsedCartedPokemons);
-          //remove plus icon from pokemons which are already in the cart
+        const cartedPokemonsIds = localStorage.getItem('cartedPokemons');
+        if (cartedPokemonsIds) {
           const allPokemons = this.pokemonList.value;
-          parsedCartedPokemons.forEach((cartPok) => {
-            const tmpPokIndex = allPokemons.findIndex(
-              (pok) => pok.name === cartPok.name
-            );
-            if (tmpPokIndex !== -1) {
-              allPokemons[tmpPokIndex].addedToCart = true;
+          const parsedCartedPokemonsIds = JSON.parse(cartedPokemonsIds);
+          this.logger.info(`existing pokemons cart found`);
+          
+          //update pokemons in cart counter
+          this.pokemonsInCartAmount.next(parsedCartedPokemonsIds.length);
+          
+          //mark pokemons added to cart
+          parsedCartedPokemonsIds.forEach(cartedPokemonId => {
+            const addedPokemonIndex = allPokemons.findIndex(pok => pok.id === cartedPokemonId);
+            if( addedPokemonIndex !== -1){
+              allPokemons[addedPokemonIndex].addedToCart = true;
             }
           });
+
           this.pokemonList.next(allPokemons);
         }
       }
     }catch{
-      this.logger.debug(`error loading pokemons cart from storage`);
+      this.logger.info(`error loading pokemons cart from storage`);
     }
   }
 }

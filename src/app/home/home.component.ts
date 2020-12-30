@@ -13,20 +13,16 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   pokemons:Pokemon[] = [];
   private pokemonsSub = new Subscription();
-  pokemonsInCart:Pokemon[] = [];
-  private cartPokemonsSub = new Subscription();
 
   constructor(private pokemonService: PokemonService, private logger: LoggerService) { }
   
   ngOnDestroy(): void {
     this.pokemonsSub.unsubscribe();
-    this.cartPokemonsSub.unsubscribe();
   }
 
   ngOnInit(): void {
     this.logger.debug('init HomeComponent');
     this.pokemonsSub = this.pokemonService.PokemonList$.subscribe(result => this.pokemons = result);
-    this.cartPokemonsSub = this.pokemonService.pokemonsInCartList$.subscribe(result => this.pokemonsInCart = result);
   }
 
   addPokemonToCart(pokemon: Pokemon):void{
@@ -40,7 +36,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       addedPokemon.addedToCart = true;
     }
   }
-  public trackByFn(pokemon) {
+  public trackByFn(pokemon):number {
     return pokemon.id;
   }
 }

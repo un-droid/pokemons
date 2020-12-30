@@ -13,18 +13,19 @@ import { PokemonService } from '../pokemon.service';
 export class HeaderComponent implements OnInit, OnDestroy {
 
   isLoggedIn = this.auth.isLoggedIn$;
-  pokemonsInCart:Pokemon[] = [];
-  private cartPokemonsSub = new Subscription();
+
+  pokemonsInCartCount:number = 0;
+  private pokemonsInCartNumSub = new Subscription();
   
   constructor(private auth: AuthService, private logger: LoggerService, private pokemonService: PokemonService) { }
 
   ngOnDestroy(): void {
-    this.cartPokemonsSub.unsubscribe();
+    this.pokemonsInCartNumSub.unsubscribe();
   }
 
   ngOnInit(): void {
     this.logger.debug('init HeaderComponent');
-    this.cartPokemonsSub = this.pokemonService.pokemonsInCartList$.subscribe(result => this.pokemonsInCart = result);
+    this.pokemonsInCartNumSub = this.pokemonService.PokemonsInCartAmount$.subscribe(result => this.pokemonsInCartCount = result);
   }
 
   login() {

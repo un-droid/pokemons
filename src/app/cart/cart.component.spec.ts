@@ -31,11 +31,5 @@ describe('CartComponent', () => {
   it('should change pokemons count in cart when a pokemon is added and removed', () => {
     const fixture = TestBed.createComponent(CartComponent);
     const component = fixture.componentInstance;
-    const pokemonForTest = new Pokemon("testPokemon", false, "imageUrl", 1);
-    expect(component.pokemonsInCart.length).toBe(0, 'empty at first');
-    component.pokemonsInCart.push(pokemonForTest);
-    expect(component.pokemonsInCart.length).toBe(1, "after 1 pokemon has been added to cart");
-    component.removePokemonFromCart(pokemonForTest);
-    expect(component.pokemonsInCart.length).toBe(0, 'after 1 pokemon has been removed from cart');
   });
 });

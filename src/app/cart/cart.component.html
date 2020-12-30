@@ -1,9 +1,7 @@
-<div class="cart-pokemons-container" *ngIf="pokemonsInCart.length > 0 ; else noPokemons">
-    <p class="cart-pokemon-list__title">You have currently ({{pokemonsInCart.length}}) Pokemons in your cart:</p>
+<div class="cart-pokemons-container" *ngIf="pokemonsInCartCount > 0 ; else noPokemons">
+    <p class="cart-pokemon-list__title">You have currently ({{pokemonsInCartCount}}) Pokemons in your cart:</p>
     <mat-list role="list" class="pokemon-list__container" >
-        <mat-list-item *ngFor="let pokemon of pokemonsInCart; trackBy: trackByFn"
-                        role="listitem" class="pokemon__item"
-                        [@simpleFadeAnimation]="'in'">
+        <mat-list-item *ngFor="let pokemon of performFilter(pokemons); trackBy: trackByFn" role="listitem" class="pokemon__item" [@simpleFadeAnimation]="'in'">
             <i class="fa fa-minus-circle" (click)="removePokemonFromCart(pokemon)" title="Remove {{pokemon.name}} from the cart"></i>
             <div class="pokemon-details">
                 <img [src]="pokemon.image">
